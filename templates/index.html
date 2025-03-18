@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Live CMD Output</title>
+
+    <style>
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { font-family: Arial, sans-serif; background: #111; color: lime; display: flex; flex-direction: column; height: 100vh; }
+
+        
+
+        /* Output box takes most of the screen */
+
+        #output { 
+
+            flex-grow: 1; 
+
+            background: black; 
+
+            padding: 10px; 
+
+            overflow-y: auto; 
+
+            font-family: monospace; 
+
+            white-space: pre-wrap; 
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: flex-end;  /* Ensures the scroll is always at the bottom */
+
+        }
+
+
+
+        /* Input container at bottom */
+
+        #input-container { 
+
+            display: flex; 
+
+            width: 100%; 
+
+            padding: 10px; 
+
+            background: #222; 
+
+        }
+
+
+
+        /* Full-width text input */
+
+        #command { 
+
+            flex-grow: 1; 
+
+            font-size: 18px; 
+
+            padding: 10px; 
+
+            background: #333; 
+
+            color: lime; 
+
+            border: none; 
+
+            outline: none; 
+
+        }
+
+
+
+        /* Button */
+
+        button { 
+
+            padding: 10px 20px; 
+
+            font-size: 18px; 
+
+            background: lime; 
+
+            color: black; 
+
+            border: none; 
+
+            cursor: pointer; 
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- Output area -->
+
+    <pre id="output"></pre>
+
+
+
+    <!-- Input area at bottom -->
+
+    <div id="input-container">
+
+        <input type="text" id="command" placeholder="Enter command..." autofocus>
+
+        <button onclick="executeCommand()">Run</button>
+
+    </div>
+
+
+
+    <script>
+
+        function executeCommand() {
+
+            let commandInput = document.getElementById("command");
+
+            let command = commandInput.value;
+
+            commandInput.value = "";
+
+            let outputDiv = document.getElementById("output");
+
+            outputDiv.innerHTML += "> " + command + "\n";
+
+
+
+            fetch("/execute", {
+
+                method: "POST",
+
+                body: new URLSearchParams({ command })
+
+            })
+
+            .then(response => response.body.getReader())
+
+            .then(reader => {
+
+                function readChunk() {
+
+                    reader.read().then(({ done, value }) => {
+
+                        if (done) return;
+
+                        outputDiv.innerHTML += new TextDecoder().decode(value);
+
+                        outputDiv.scrollTop = outputDiv.scrollHeight;  // Auto-scroll to bottom
+
+                        readChunk();
+
+                    });
+
+                }
+
+                readChunk();
+
+            });
+
+        }
+
+
+
+        // Run command when Enter is pressed
+
+        document.getElementById("command").addEventListener("keypress", function(event) {
+
+            if (event.key === "Enter") {
+
+                executeCommand();
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
+</html>
+
